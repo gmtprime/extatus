@@ -114,13 +114,14 @@ config :extatus,
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed as:
+If [available in Hex](https://hex.pm/packages/extatus), the package can be
+installed as:
 
   1. Add `extatus` to your list of dependencies in `mix.exs`:
 
     ```elixir
     def deps do
-      [{:extatus, "~> 0.1.0"}]
+      [{:extatus, "~> 0.1"}]
     end
     ```
 
