@@ -25,6 +25,8 @@ defmodule Extatus.Mixfile do
      {:cowboy, "~> 1.1"},
      {:prometheus_ex, "~> 1.0"},
      {:accept, "~> 0.1"},
+     {:earmark, ">= 0.0.0", only: :dev},
+     {:ex_doc, "~> 0.13", only: :dev},
      {:uuid, "~> 1.1", only: [:dev, :test]},
      {:inch_ex, "~> 0.5", only: [:dev, :test]},
      {:credo, "~> 0.6", only: [:dev, :test]}]
