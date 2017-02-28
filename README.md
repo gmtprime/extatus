@@ -1,5 +1,7 @@
 # Extatus
 
+[![Build Status](https://travis-ci.org/gmtprime/extatus.svg?branch=master)](https://travis-ci.org/gmtprime/extatus) [![Hex pm](http://img.shields.io/hexpm/v/extatus.svg?style=flat)](https://hex.pm/packages/extatus) [![hex.pm downloads](https://img.shields.io/hexpm/dt/extatus.svg?style=flat)](https://hex.pm/packages/extatus) [![Deps Status](https://beta.hexfaktor.org/badge/all/github/gmtprime/extatus.svg)](https://beta.hexfaktor.org/github/gmtprime/extatus) [![Inline docs](http://inch-ci.org/github/gmtprime/extatus.svg?branch=master)](http://inch-ci.org/github/gmtprime/extatus)
+
 Extatus is an application to report the status of `GenServer` processes to
 Prometheus (time series database) via the HTTP endpoint `/metrics`
 implemented with `:cowboy`.
