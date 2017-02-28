@@ -34,14 +34,14 @@ defmodule Extatus.CowboyExporter do
     labels = [registry: @prometheus_registry, content_type: content_type]
 
     # Duration metric
-    {Summary, spec} = gen_spec(@duration_metric, labels)
-    scrape = @summary_mod.observe_duration(spec, fn ->
+    {Summary, duration_spec} = gen_spec(@duration_metric, labels)
+    scrape = @summary_mod.observe_duration(duration_spec, fn ->
       format.format(@prometheus_registry)
     end)
     
     # Size metric
-    {Summary, spec} = gen_spec(@size_metric, labels)
-    @summary_mod.observe(spec, :erlang.iolist_size(scrape))
+    {Summary, size_spec} = gen_spec(@size_metric, labels)
+    @summary_mod.observe(size_spec, :erlang.iolist_size(scrape))
 
     {content_type, scrape}
   end
