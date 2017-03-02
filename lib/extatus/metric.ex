@@ -36,7 +36,7 @@ defmodule Extatus.Metric do
   To change the default registry, just change the configuration i.e:
 
       config :extatus,
-        prometheus_registry: "default"
+        prometheus_registry: :default
   """
   use Prometheus.Metric
 
@@ -53,7 +53,7 @@ defmodule Extatus.Metric do
       @gauge_mod Application.get_env(:extatus, :gauge_mod, Gauge)
       @histogram_mod Application.get_env(:extatus, :histogram_mod, Histogram)
       @summary_mod Application.get_env(:extatus, :summary_mod, Summary)
-      @prometheus_registry Application.get_env(:extatus, :prometheus_registry, "default")
+      @prometheus_registry Application.get_env(:extatus, :prometheus_registry, :default)
 
       @doc false
       def __metrics__, do: %{}

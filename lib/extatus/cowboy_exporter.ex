@@ -4,7 +4,7 @@ defmodule Extatus.CowboyExporter do
   """
   use Extatus.Metric
 
-  @prometheus_registry Application.get_env(:extatus, :prometheus_registry, "default")
+  @prometheus_registry Application.get_env(:extatus, :prometheus_registry, :default)
 
   @duration_metric :telemetry_scrape_duration_seconds
   @size_metric :telemetry_scrape_size_bytes

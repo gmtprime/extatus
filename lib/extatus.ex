@@ -63,7 +63,7 @@ defmodule Extatus do
     defmetrics do
       gauge :instrument_gauge do
         label :label
-        registry "default"
+        registry :default
         help "Instrument gauge"
       end
     end
@@ -99,7 +99,7 @@ defmodule Extatus do
     - `:timeout` - Frequency the handlers get the metrics from the processes.
     - `:port` - Port where cowboy is listening to request coming from
     Prometheus.
-    - `:prometheus_registry` - Prometheus registry. By default is `"default"`.
+    - `:prometheus_registry` - Prometheus registry. By default is `:default`.
 
   i.e:
 
