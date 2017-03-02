@@ -65,8 +65,8 @@ defmodule ExtatusTest do
     Metric.subscribe(handler)
 
     activity_metric = :extatus_process_activity
-    assert_receive {:declare, {^handler, Gauge, ^activity_metric}, [:name, :pid, :state]}
-    assert_receive {:set, {^handler, Gauge, ^activity_metric, [^name, _, "up"]}, 2}
+    assert_receive {:declare, {^handler, Gauge, ^activity_metric}, [:name]}
+    assert_receive {:set, {^handler, Gauge, ^activity_metric, [^name]}, 2}
 
     process_metric = :test_process
     assert_receive {:declare, {^handler, Counter, ^process_metric}, [:module, :name]}
@@ -74,6 +74,6 @@ defmodule ExtatusTest do
     assert is_integer(inc)
     
     assert :ok = TestProcess.stop(pid)
-    assert_receive {:set, {^handler, Gauge, ^activity_metric, [^name, _, ":normal"]}, 0}
+    assert_receive {:set, {^handler, Gauge, ^activity_metric, [^name]}, 0}
   end
 end

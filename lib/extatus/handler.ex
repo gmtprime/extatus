@@ -8,13 +8,9 @@ defmodule Extatus.Handler do
     - 1 for a process idle.
     - 2 for a process up.
 
-  Additionally the labels are `[:name, :pid, :state]` where:
-
-    - `:name` is the name of the monitored process. See `Extatus.Process`
-    behaviour and the callback `gen_name/1`.
-    - `:pid` is the PID of the monitored process.
-    - `state` is the state of the process (`"up"`, `"idle"` or the reason is
-    down).
+  Additionally it has only one label `:name` which should be unique among
+  processes. `:name` is the name of the monitored process. See
+  `Extatus.Process` behaviour and the callback `gen_name/1`.
 
   By default gathers data every 1000 milliseconds. To change it, for example,
   to 5000 milliseconds just set the configuration as:
@@ -73,10 +69,10 @@ defmodule Extatus.Handler do
     {:noreply, state, @timeout}
   end
   def handle_info(
-    {:DOWN, ref, _, pid, reason},
+    {:DOWN, ref, _, pid, _reason},
     %State{pid: pid, ref: ref} = state
   ) do
-    down(state, reason)
+    down(state)
     {:stop, :normal, state}
   end
   def handle_info(_, %State{} = state) do
@@ -91,8 +87,6 @@ defmodule Extatus.Handler do
   defmetrics do
     gauge @metric do
       label :name
-      label :pid
-      label :state
       help "Process activity"
       registry :default
     end
@@ -117,22 +111,22 @@ defmodule Extatus.Handler do
   end
 
   @doc false
-  def up(%State{pid: pid, name: name}) do
-    labels = [name: name, pid: pid, state: "up"]
+  def up(%State{name: name}) do
+    labels = [name: name]
     with {Gauge, spec} <- gen_spec(@metric, labels),
          do: @gauge_mod.set(spec, 2)
   end
 
   @doc false
-  def idle(%State{pid: pid, name: name}) do
-    labels = [name: name, pid: pid, state: "idle"]
+  def idle(%State{name: name}) do
+    labels = [name: name]
     with {Gauge, spec} <- gen_spec(@metric, labels),
          do: @gauge_mod.set(spec, 1)
   end
 
   @doc false
-  def down(%State{pid: pid, name: name}, reason) do
-    labels = [name: name, pid: pid, state: inspect(reason)]
+  def down(%State{name: name}) do
+    labels = [name: name]
     with {Gauge, spec} <- gen_spec(@metric, labels),
          do: @gauge_mod.set(spec, 0)
   end
