@@ -112,23 +112,17 @@ defmodule Extatus.Handler do
 
   @doc false
   def up(%State{name: name}) do
-    labels = [name: name]
-    with {Gauge, spec} <- gen_spec(@metric, labels),
-         do: @gauge_mod.set(spec, 2)
+    Gauge.set(@metric, [name: name], 2)
   end
 
   @doc false
   def idle(%State{name: name}) do
-    labels = [name: name]
-    with {Gauge, spec} <- gen_spec(@metric, labels),
-         do: @gauge_mod.set(spec, 1)
+    Gauge.set(@metric, [name: name], 1)
   end
 
   @doc false
   def down(%State{name: name}) do
-    labels = [name: name]
-    with {Gauge, spec} <- gen_spec(@metric, labels),
-         do: @gauge_mod.set(spec, 0)
+    Gauge.set(@metric, [name: name], 0)
   end
 
   @doc false

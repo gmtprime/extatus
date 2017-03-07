@@ -39,8 +39,7 @@ defmodule Extatus.MetricTest do
   end
 
   test "Counter metric declaration" do
-    specs = TestMetrics.__metrics__()
-    assert {Prometheus.Metric.Counter, spec} = specs[:counter_test]
+    assert {Extatus.Metric.Counter, spec} = TestMetrics.get_spec(:counter_test)
     assert spec[:name] == :counter_test
     assert spec[:labels] == [:module, :name]
     assert spec[:registry] == :default
@@ -49,14 +48,13 @@ defmodule Extatus.MetricTest do
 
   test "Counter metric generation" do
     labels = [name: "Counter", module: Module]
-    {Prometheus.Metric.Counter, spec} = TestMetrics.gen_spec(:counter_test, labels)
+    assert {Extatus.Metric.Counter, spec} = TestMetrics.gen_spec(:counter_test, labels)
     assert spec[:name] == :counter_test
     assert spec[:labels] == ["Module", "Counter"]
   end
 
   test "Gauge metric declaration" do
-    specs = TestMetrics.__metrics__()
-    assert {Prometheus.Metric.Gauge, spec} = specs[:gauge_test]
+    assert {Extatus.Metric.Gauge, spec} = TestMetrics.get_spec(:gauge_test)
     assert spec[:name] == :gauge_test
     assert spec[:labels] == [:module, :name]
     assert spec[:registry] == :default
@@ -65,14 +63,13 @@ defmodule Extatus.MetricTest do
 
   test "Gauge metric generation" do
     labels = [name: "Gauge", module: Module]
-    {Prometheus.Metric.Gauge, spec} = TestMetrics.gen_spec(:gauge_test, labels)
+    assert {Extatus.Metric.Gauge, spec} = TestMetrics.gen_spec(:gauge_test, labels)
     assert spec[:name] == :gauge_test
     assert spec[:labels] == ["Module", "Gauge"]
   end
 
   test "Histogram metric declaration" do
-    specs = TestMetrics.__metrics__()
-    assert {Prometheus.Metric.Histogram, spec} = specs[:histogram_test]
+    assert {Extatus.Metric.Histogram, spec} = TestMetrics.get_spec(:histogram_test)
     assert spec[:name] == :histogram_test
     assert spec[:labels] == [:module, :name]
     assert spec[:registry] == :default
@@ -82,14 +79,13 @@ defmodule Extatus.MetricTest do
 
   test "Histogram metric generation" do
     labels = [name: "Histogram", module: Module]
-    {Prometheus.Metric.Histogram, spec} = TestMetrics.gen_spec(:histogram_test, labels)
+    assert {Extatus.Metric.Histogram, spec} = TestMetrics.gen_spec(:histogram_test, labels)
     assert spec[:name] == :histogram_test
     assert spec[:labels] == ["Module", "Histogram"]
   end
 
   test "Summary metric declaration" do
-    specs = TestMetrics.__metrics__()
-    assert {Prometheus.Metric.Summary, spec} = specs[:summary_test]
+    assert {Extatus.Metric.Summary, spec} = TestMetrics.get_spec(:summary_test)
     assert spec[:name] == :summary_test
     assert spec[:labels] == [:module, :name]
     assert spec[:registry] == :default
@@ -98,7 +94,7 @@ defmodule Extatus.MetricTest do
 
   test "Summary metric generation" do
     labels = [name: "Summary", module: Module]
-    {Prometheus.Metric.Summary, spec} = TestMetrics.gen_spec(:summary_test, labels)
+    assert {Extatus.Metric.Summary, spec} = TestMetrics.gen_spec(:summary_test, labels)
     assert spec[:name] == :summary_test
     assert spec[:labels] == ["Module", "Summary"]
   end
@@ -108,9 +104,17 @@ defmodule Extatus.MetricTest do
     :ok = Metric.subscribe(pid)
 
     assert :ok = TestMetrics.setup()
-    assert_receive {:declare, {^pid, Extatus.Sandbox.Counter, :counter_test}, [:module, :name]}
-    assert_receive {:declare, {^pid, Extatus.Sandbox.Gauge, :gauge_test}, [:module, :name]}
-    assert_receive {:declare, {^pid, Extatus.Sandbox.Histogram, :histogram_test}, [:module, :name]}
-    assert_receive {:declare, {^pid, Extatus.Sandbox.Summary, :summary_test}, [:module, :name]}
+    assert_receive {:declare, Extatus.Sandbox.Counter, spec, nil}
+    assert spec[:name] == :counter_test
+    assert spec[:labels] == [:module, :name]
+    assert_receive {:declare, Extatus.Sandbox.Gauge, spec, nil}
+    assert spec[:name] == :gauge_test
+    assert spec[:labels] == [:module, :name]
+    assert_receive {:declare, Extatus.Sandbox.Histogram, spec, nil}
+    assert spec[:name] == :histogram_test
+    assert spec[:labels] == [:module, :name]
+    assert_receive {:declare, Extatus.Sandbox.Summary, spec, nil}
+    assert spec[:name] == :summary_test
+    assert spec[:labels] == [:module, :name]
   end
 end

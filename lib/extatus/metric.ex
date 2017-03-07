@@ -20,15 +20,11 @@ defmodule Extatus.Metric do
   metrics at runtime and the `TestMetrics.gen_spec/2` to generate the
   specs of an actual obsevation i.e:
 
+      iex> require Extatus.Metric.Counter
+      Extatus.Metric.Counter
       iex> TestMetrics.setup()
       :ok
-      iex> labels = [something: "Something", id: 1]
-      [something: "Something", id: 1]
-      iex> {Prometheus.Metric.Counter, spec} = TestMetrics.gen_spec(:counter_test, labels)
-      {Prometheus.Metric.Counter, [name: :counter_test, labels: ["1", "Something"]}
-      iex> require Prometheus.Metric.Counter
-      Prometheus.Metric.Counter
-      iex> Prometheus.Metric.Counter.inc(spec)
+      iex> Extatus.Metric.Counter.inc(:counter_test, something: "Test", id: 1)
       :ok
 
   The module `Extatus.Process` uses this module.
@@ -38,7 +34,6 @@ defmodule Extatus.Metric do
       config :extatus,
         prometheus_registry: :default
   """
-  use Prometheus.Metric
 
   @doc """
   Adds the functions `setup/0` and `gen_spec/2` for metric declaration.
@@ -46,13 +41,17 @@ defmodule Extatus.Metric do
   defmacro __using__(_) do
     quote do
       import Extatus.Metric
-      alias Extatus.Metric
-      use Prometheus.Metric
 
-      @counter_mod Application.get_env(:extatus, :counter_mod, Counter)
-      @gauge_mod Application.get_env(:extatus, :gauge_mod, Gauge)
-      @histogram_mod Application.get_env(:extatus, :histogram_mod, Histogram)
-      @summary_mod Application.get_env(:extatus, :summary_mod, Summary)
+      alias Extatus.Metric.Counter
+      alias Extatus.Metric.Gauge
+      alias Extatus.Metric.Histogram
+      alias Extatus.Metric.Summary
+
+      require Extatus.Metric.Counter
+      require Extatus.Metric.Gauge
+      require Extatus.Metric.Histogram
+      require Extatus.Metric.Summary
+
       @prometheus_registry Application.get_env(:extatus, :prometheus_registry, :default)
 
       @doc false
@@ -61,26 +60,35 @@ defmodule Extatus.Metric do
       @doc false
       def setup do
         metrics = __metrics__()
-        for {_, {module, spec}} <- metrics do
+        for {name, {module, _}} <- metrics do
           case module do
-            Counter -> @counter_mod.declare(spec)
-            Gauge -> @gauge_mod.declare(spec)
-            Histogram -> @histogram_mod.declare(spec)
-            Summary -> @summary_mod.declare(spec)
+            Extatus.Metric.Counter -> Counter.declare(name)
+            Extatus.Metric.Gauge -> Gauge.declare(name)
+            Extatus.Metric.Histogram -> Histogram.declare(name)
+            Extatus.Metric.Summary -> Summary.declare(name)
           end
         end
         :ok
       end
 
       @doc false
-      def gen_spec(name, labels \\ []) do
+      def get_spec(name) do
         metrics = __metrics__()
         with {module, spec} <- metrics[name] do
+          {module, spec}
+        else
+          _ -> :error
+        end
+      end
+
+      @doc false
+      def gen_spec(name, values \\ []) do
+        with {module, spec} <- get_spec(name) do
           registry = Keyword.get(spec, :registry, @prometheus_registry)
-          keys = Keyword.get(spec, :labels, [])
+          labels = Keyword.get(spec, :labels, [])
           values =
-            for key <- keys do
-              value = Keyword.get(labels, key)
+            for label <- labels do
+              value = Keyword.get(values, label)
               if not is_binary(value), do: inspect(value), else: value
             end
           {module, [name: name, labels: values, registry: registry]}
@@ -128,7 +136,7 @@ defmodule Extatus.Metric do
   """
   defmacro counter(name, do: block) do
     spec = expand(:counter, block, [name: name])
-    type = Prometheus.Metric.Counter
+    type = Extatus.Metric.Counter
     quote do
       Extatus.Metric.__metric__(
         __MODULE__,
@@ -153,7 +161,7 @@ defmodule Extatus.Metric do
   """
   defmacro gauge(name, do: block) do
     spec = expand(:gauge, block, [name: name])
-    type = Prometheus.Metric.Gauge
+    type = Extatus.Metric.Gauge
     quote do
       Extatus.Metric.__metric__(
         __MODULE__,
@@ -182,7 +190,7 @@ defmodule Extatus.Metric do
   """
   defmacro histogram(name, do: block) do
     spec = expand(:histogram, block, [name: name])
-    type = Prometheus.Metric.Histogram
+    type = Extatus.Metric.Histogram
     quote do
       Extatus.Metric.__metric__(
         __MODULE__,
@@ -207,7 +215,7 @@ defmodule Extatus.Metric do
   """
   defmacro summary(name, do: block) do
     spec = expand(:summary, block, [name: name])
-    type = Prometheus.Metric.Summary
+    type = Extatus.Metric.Summary
     quote do
       Extatus.Metric.__metric__(
         __MODULE__,

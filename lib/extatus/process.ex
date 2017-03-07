@@ -59,8 +59,7 @@ defmodule Extatus.Process do
 
         # Report
         def report(n) do
-          {Gauge, spec} = gen_spec(:instrument_gauge, label: "Label")
-          Gauge.set(spec, n)
+          Gauge.set(:instrument_gauge, [label: "Label"], n)
         end
 
         def init(_) do

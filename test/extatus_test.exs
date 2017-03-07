@@ -36,12 +36,7 @@ defmodule ExtatusTest do
     end
 
     def report(%State{name: name, module: module}) do
-      with {Counter, spec} <- gen_spec(@metric, name: name, module: module) do
-        @counter_mod.inc(spec)
-        :ok
-      else
-        _ -> :error
-      end
+      Counter.inc(@metric, [name: name, module: module])
     end
 
     # Callbacks
@@ -65,15 +60,24 @@ defmodule ExtatusTest do
     Metric.subscribe(handler)
 
     activity_metric = :extatus_process_activity
-    assert_receive {:declare, {^handler, Gauge, ^activity_metric}, [:name]}
-    assert_receive {:set, {^handler, Gauge, ^activity_metric, [^name]}, 2}
+    assert_receive {:declare, Extatus.Sandbox.Gauge, spec, nil}
+    assert spec[:name] == activity_metric
+    assert spec[:labels] == [:name]
+    assert_receive {:set, Extatus.Sandbox.Gauge, spec, 2}
+    assert spec[:name] == activity_metric
+    assert spec[:labels] == [name]
 
     process_metric = :test_process
-    assert_receive {:declare, {^handler, Counter, ^process_metric}, [:module, :name]}
-    assert_receive {:inc, {^handler, Counter, ^process_metric, [_, ^name]}, inc}
-    assert is_integer(inc)
+    assert_receive {:declare, Extatus.Sandbox.Counter, spec, nil}
+    assert spec[:name] == process_metric
+    assert spec[:labels] == [:module, :name]
+    assert_receive {:inc, Extatus.Sandbox.Counter, spec, 1}
+    assert spec[:name] == process_metric
+    assert spec[:labels] == ["ExtatusTest.TestProcess", name]
     
     assert :ok = TestProcess.stop(pid)
-    assert_receive {:set, {^handler, Gauge, ^activity_metric, [^name]}, 0}
+    assert_receive {:set, Extatus.Sandbox.Gauge, spec, 0}
+    assert spec[:name] == activity_metric
+    assert spec[:labels] == [name]
   end
 end

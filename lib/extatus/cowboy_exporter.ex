@@ -31,17 +31,16 @@ defmodule Extatus.CowboyExporter do
   def scrape(request) do
     {content_type, format} = negotiate(request)
     
-    labels = [registry: @prometheus_registry, content_type: content_type]
+    values = [registry: @prometheus_registry, content_type: content_type]
 
     # Duration metric
-    {Summary, duration_spec} = gen_spec(@duration_metric, labels)
-    scrape = @summary_mod.observe_duration(duration_spec, fn ->
-      format.format(@prometheus_registry)
-    end)
+    scrape =
+      Summary.observe_duration(@duration_metric, values, fn ->
+        format.format(@prometheus_registry)
+      end)
     
     # Size metric
-    {Summary, size_spec} = gen_spec(@size_metric, labels)
-    @summary_mod.observe(size_spec, :erlang.iolist_size(scrape))
+    Summary.observe(@size_metric, values, :erlang.iolist_size(scrape))
 
     {content_type, scrape}
   end

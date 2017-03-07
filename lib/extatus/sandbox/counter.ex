@@ -6,6 +6,11 @@ defmodule Extatus.Sandbox.Counter do
   alias Extatus.Sandbox.Metric
 
   @doc false
+  def new(spec) do
+    Metric.new(__MODULE__, spec)
+  end
+
+  @doc false
   def declare(spec) do
     Metric.declare(__MODULE__, spec)
   end
@@ -13,5 +18,25 @@ defmodule Extatus.Sandbox.Counter do
   @doc false
   def inc(spec, value \\ 1) do
     Metric.inc(__MODULE__, spec, value)
+  end
+
+  @doc false
+  def dinc(spec, value \\ 1) do
+    Metric.dinc(__MODULE__, spec, value)
+  end
+
+  @doc false
+  def remove(spec) do
+    Metric.remove(__MODULE__, spec)
+  end
+
+  @doc false
+  def reset(spec) do
+    Metric.reset(__MODULE__, spec)
+  end
+
+  @doc false
+  def value(spec) do
+    Metric.value(__MODULE__, spec)
   end
 end

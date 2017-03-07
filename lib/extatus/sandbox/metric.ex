@@ -1,7 +1,7 @@
 defmodule Extatus.Sandbox.Metric do
   use GenServer
 
-  defstruct [:table, :subscribers]
+  defstruct [:subscribers]
   alias __MODULE__, as: State
 
   @doc """
@@ -19,47 +19,115 @@ defmodule Extatus.Sandbox.Metric do
   end
 
   @doc false
-  def gen_data(module, spec, value \\ nil)
-
-  def gen_data(module, spec, nil) do
-    key = {self(), module, spec[:name]}
-    {key, spec[:labels]}
+  def gen_data(module, spec, value \\ nil) do
+    {self(), module, spec, value}
   end
-  def gen_data(module, spec, value) do
-    key = {self(), module, spec[:name], spec[:labels]}
-    {key, value}
+
+  @doc false
+  def send_data(function, data) do
+    GenServer.call(__MODULE__, {function, data})
+  end
+
+  @doc false
+  def new(module, spec) do
+    data = gen_data(module, spec)
+    send_data(:new, data)
   end
 
   @doc false
   def declare(module, spec) do
     data = gen_data(module, spec)
-    GenServer.call(__MODULE__, {:declare, data})
+    send_data(:declare, data)
   end
 
   @doc false
   def inc(module, spec, value \\ 1) do
     data = gen_data(module, spec, value)
-    GenServer.call(__MODULE__, {:inc, data})
+    send_data(:inc, data)
+  end
+
+  @doc false
+  def dinc(module, spec, value \\ 1) do
+    data = gen_data(module, spec, value)
+    send_data(:dinc, data)
+  end
+
+  @doc false
+  def dec(module, spec, value \\ 1) do
+    data = gen_data(module, spec, value)
+    send_data(:dec, data)
+  end
+
+  @doc false
+  def ddec(module, spec, value \\ 1) do
+    data = gen_data(module, spec, value)
+    send_data(:ddec, data)
   end
 
   @doc false
   def set(module, spec, value \\ 1) do
     data = gen_data(module, spec, value)
-    GenServer.call(__MODULE__, {:set, data})
+    send_data(:set, data)
+  end
+
+  @doc false
+  def set_to_current_time(module, spec) do
+    data = gen_data(module, spec, :os.system_time(:seconds))
+    send_data(:set_to_current_time, data)
+  end
+
+  @doc false
+  def track_inprogress(module, spec, function) do
+    result = function.()
+    data = gen_data(module, spec, result)
+    send_data(:track_inprogress, data)
+    result
+  end
+
+  @doc false
+  def set_duration(module, spec, function) do
+    {time, result} = :timer.tc(fn -> function.() end)
+    data = gen_data(module, spec, time)
+    send_data(:set_duration, data)
+    result
   end
 
   @doc false
   def observe(module, spec, amount \\ 1) do
     data = gen_data(module, spec, amount)
-    GenServer.call(__MODULE__, {:observe, data})
+    send_data(:observe, data)
+  end
+
+  @doc false
+  def dobserve(module, spec, amount \\ 1) do
+    data = gen_data(module, spec, amount)
+    send_data(:dobserve, data)
   end
 
   @doc false
   def observe_duration(module, spec, f) do
     {time, result} = :timer.tc(fn -> f.() end)
     data = gen_data(module, spec, time)
-    GenServer.call(__MODULE__, {:observe, data})
+    send_data(:observe_duration, data)
     result
+  end
+
+  @doc false
+  def remove(module, spec) do
+    data = gen_data(module, spec)
+    send_data(:remove, data)
+  end
+
+  @doc false
+  def reset(module, spec) do
+    data = gen_data(module, spec)
+    send_data(:reset, data)
+  end
+
+  @doc false
+  def value(module, spec) do
+    data = gen_data(module, spec)
+    send_data(:value, data)
   end
 
   @doc false
@@ -72,11 +140,7 @@ defmodule Extatus.Sandbox.Metric do
 
   @doc false
   def init(_) do
-    opts = [:set, write_concurrency: true, read_concurrency: true]
-    table = :ets.new(:metrics, opts)
-    subscribers = %{}
-    state = %State{table: table, subscribers: subscribers}
-    {:ok, state}
+    {:ok, %State{subscribers: %{}}}
   end
 
   @doc false
@@ -89,56 +153,12 @@ defmodule Extatus.Sandbox.Metric do
     {:reply, :ok, %State{state | subscribers: subscribers}}
   end
   def handle_call(
-    {:declare, {key, value}},
+    {function, {_pid, _module, _spec, _value} = key},
     _from,
-    %State{table: table, subscribers: subscribers} = state
+    %State{subscribers: subscribers} = state
   ) do
-    with {:ok, labels} <- insert(table, key, value),
-         :ok <- send_subscribers(:declare, subscribers, key, labels) do
-      {:reply, :ok, state}
-    else
-      _ ->
-        {:reply, :error, state}
-    end
-  end
-  def handle_call(
-    {:inc, {key, value}},
-    _from,
-    %State{table: table, subscribers: subscribers} = state
-  ) do
-    with {:ok, value} <- increment(table, key, value),
-         :ok <- send_subscribers(:inc, subscribers, key, value) do
-      {:reply, :ok, state}
-    else
-      _ ->
-        {:reply, :error, state}
-    end
-  end
-  def handle_call(
-    {:set, {key, value}},
-    _from,
-    %State{table: table, subscribers: subscribers} = state
-  ) do
-    with {:ok, value} <- update(table, key, value),
-         :ok <- send_subscribers(:set, subscribers, key, value) do
-      {:reply, :ok, state}
-    else
-      _ ->
-        {:reply, :error, state}
-    end
-  end
-  def handle_call(
-    {:observe, {key, value}},
-    _from,
-    %State{table: table, subscribers: subscribers} = state
-  ) do
-    with {:ok, value} <- update(table, key, value),
-         :ok <- send_subscribers(:observe, subscribers, key, value) do
-      {:reply, :ok, state}
-    else
-      _ ->
-        {:reply, :error, state}
-    end
+    result = send_subscribers(function, subscribers, key)
+    {:reply, result, state}
   end
   def handle_call(_msg, _from, state) do
     {:noreply, state}
@@ -158,50 +178,10 @@ defmodule Extatus.Sandbox.Metric do
   end
 
   @doc false
-  def send_subscribers(action, subscribers, key, value) do
-    pid = elem(key, 0)
+  def send_subscribers(function, subscribers, {pid, module, spec, value}) do
     for receiver <- Map.get(subscribers, pid, []) do
-      send receiver, {action, key, value}
+      send receiver, {function, module, spec, value}
     end
     :ok
-  end
-
-  @doc false
-  def insert(table, key, value) do
-    case :ets.lookup(table, key) do
-      [] ->
-        :ets.insert(table, {key, value})
-        {:ok, value}
-      [{^key, value} | _] ->
-        {:ok, value}
-    end
-  end
-
-  @doc false
-  def update(table, {pid, module, name, values} = key, value) do
-    case :ets.lookup(table, {pid, module, name}) do
-      [] -> :error
-      [{_, labels} | _] ->
-        if length(labels) == length(values) do
-          :ets.insert(table, {key, value})
-          {:ok, value}
-        else
-          :error
-        end
-    end
-  end
-
-  @doc false
-  def increment(table, {pid, module, name, values} = key, value) do
-    case :ets.lookup(table, {pid, module, name}) do
-      [] -> :error
-      [{_, labels} | _] ->
-        if length(labels) == length(values) do
-          value = :ets.update_counter(table, key, {2, value}, {2, 0})
-          {:ok, value}
-        else
-          :error
-        end
-    end
   end
 end
