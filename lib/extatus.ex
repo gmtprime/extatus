@@ -133,11 +133,14 @@ defmodule Extatus do
   @generator Extatus.Generator
 
   @doc """
-  Starts a status handler for the provided `module` and `pid`.
+  Starts a status handler for the provided `module` and `pid`. Links to
+  calling process. This is to avoid having processes without Extatus handlers.
   """
   @spec set(module, pid) :: Supervisor.on_start_child
   def set(module, pid) do
-    @generator.start_handler(@generator, module, pid)
+    {:ok, pid} = @generator.start_handler(@generator, module, pid)
+    true = Process.link(pid)
+    {:ok, pid}
   end
 
   ###################
