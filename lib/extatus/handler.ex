@@ -17,14 +17,28 @@ defmodule Extatus.Handler do
 
       config :extatus,
         timeout: 5000
+
+  Other processes can subscribe to an `Yggdrasil` channel to get the state
+  updates of the process. The channel is:
+
+      (...)
+      iex> chan = %Yggdrasil.Channel{name: :extatus, adapter: Yggdrasil.Elixir}
+      iex> Yggdrasil.subscribe(chan)
+      iex> flush()
+      {:Y_EVENT, (...), %Extatus.Message{name: (...), state: :idle}}
   """
   use GenServer
   use Extatus.Metric
 
+  alias Yggdrasil.Channel
+  alias Extatus.Message
+
   @timeout Application.get_env(:extatus, :timeout, 1000)
 
-  defstruct [:pid, :ref, :name, :module]
+  defstruct [:pid, :ref, :name, :module, :last_state]
   alias __MODULE__, as: State
+
+  @type state :: :starting | :up | :idle | :down
 
   @doc """
   Starts a handler with the `module` and the `pid` of the process to monitor
@@ -65,18 +79,33 @@ defmodule Extatus.Handler do
     {:noreply, state, 0}
   end
   def handle_info(:timeout, %State{} = state) do
-    report(state)
+    {:ok, state} = report(state)
     {:noreply, state, @timeout}
   end
   def handle_info(
     {:DOWN, ref, _, pid, _reason},
     %State{pid: pid, ref: ref} = state
   ) do
-    down(state)
+    {:ok, state} = down(state)
     {:stop, :normal, state}
   end
   def handle_info(_, %State{} = state) do
     {:noreply, state, @timeout}
+  end
+
+  ######################
+  # Publishing functions
+
+  @doc false
+  def publish(%State{name: name, last_state: current}) do
+    message = %Message{name: name, state: current}
+    channel = gen_extatus_channel()
+    Yggdrasil.publish(channel, message)
+  end
+
+  @doc false
+  def gen_extatus_channel do
+    %Channel{name: :extatus, adapter: Yggdrasil.Elixir}
   end
 
   #########
@@ -111,18 +140,36 @@ defmodule Extatus.Handler do
   end
 
   @doc false
-  def up(%State{name: name}) do
-    Gauge.set(@metric, [name: name], 2)
+  def up(%State{name: name, last_state: :up} = state) do
+    _ = Gauge.set(@metric, [name: name], 2)
+    {:ok, state}
+  end
+  def up(%State{} = state) do
+    new_state = %State{state | last_state: :up}
+    publish(new_state)
+    up(new_state)
   end
 
   @doc false
-  def idle(%State{name: name}) do
-    Gauge.set(@metric, [name: name], 1)
+  def idle(%State{name: name, last_state: :idle} = state) do
+    _ = Gauge.set(@metric, [name: name], 1)
+    {:ok, state}
+  end
+  def idle(%State{} = state) do
+    new_state = %State{state | last_state: :idle}
+    publish(new_state)
+    idle(new_state)
   end
 
   @doc false
-  def down(%State{name: name}) do
-    Gauge.set(@metric, [name: name], 0)
+  def down(%State{name: name, last_state: :down} = state) do
+    _ = Gauge.set(@metric, [name: name], 0)
+    {:ok, state}
+  end
+  def down(%State{} = state) do
+    new_state = %State{state | last_state: :down}
+    publish(new_state)
+    down(new_state)
   end
 
   @doc false
@@ -133,8 +180,9 @@ defmodule Extatus.Handler do
   @doc false
   def report(%State{pid: pid} = state) do
     with {:ok, process_state} <- get_state(pid) do
-      up(state)
-      report(process_state, state)
+         {:ok, state} = up(state)
+         _ = report(process_state, state)
+         {:ok, state}
     else
       :error ->
         idle(state)

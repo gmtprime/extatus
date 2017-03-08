@@ -4,8 +4,8 @@ defmodule Extatus do
   Prometheus (time series database) via the HTTP endpoint `/metrics`
   implemented with `:cowboy`.
 
-  The metrics `:telemetry_scrape_duration_seconds` (summary) and
-  `telemetry_scrape_size_bytes` (summary) are calculated on every request to
+  The metrics `:cowboy_scrape_duration_seconds` (summary) and
+  `cowboy_scrape_size_bytes` (summary) are calculated on every request to
   the `/metrics` endpoint.
 
   Also for every instrumented `GenServer` process, extatus reports the
@@ -68,8 +68,8 @@ defmodule Extatus do
       end
     end
 
-    # Name of the process
-    def get_name(_n), do: {:ok, inspect(self())}
+    # Name of the process. This must be unique.
+    def get_name(_n), do: {:ok, "instrumented_process"}
 
     # Report
     def report(n) do
@@ -90,6 +90,25 @@ defmodule Extatus do
 
   This `GenServer` will report the current value stored in the server as the
   metric `:instrument_gauge` to Prometheus.
+
+  Additionally, `Yggdrasil` subscriptions to the channel:
+  
+  ```elixir
+  %Yggdrasil.Channel{name: :extatus, adapter: Yggdrasil.Elixir}
+  ```
+
+  can be used to get the updates on the current state of the process i.e:
+
+  ```elixir
+  iex> chan = %Yggdrasil.Channel{name: :extatus, adapter: Yggdrasil.Elixir}
+  iex> Yggdrasil.subscribe(chan)
+  iex> flush()
+  {:Y_CONNECTED, (...)}
+  iex> {:ok, _} = Instrumented.start_link()
+  {:ok, #PID<0.603.0>}
+  iex> flush()
+  {:Y_EVENT, _, %Extatus.Message{name: "instrumented_process", state: :up}}
+  ```
 
   ## Configuration
 

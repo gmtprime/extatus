@@ -54,11 +54,11 @@ defmodule Instrumented do
   def start_link, do: GenServer.start_link(__MODULE__, nil)
 
   def stop(pid), do: GenServer.stop(pid)
-
+    
   def value(pid), do: GenServer.call(pid, :value)
-
+    
   def inc(pid), do: GenServer.call(pid, :inc)
-
+    
   def dec(pid), do: GenServer.call(pid, :dec)
 
   # Metric
@@ -70,13 +70,12 @@ defmodule Instrumented do
     end
   end
 
-  # Name of the process
-  def get_name(_n), do: {:ok, inspect(self())}
+  # Name of the process. This must be unique.
+  def get_name(_n), do: {:ok, "instrumented_process"}
 
   # Report
   def report(n) do
-    {Gauge, spec} = gen_spec(:instrument_gauge, label: "Label")
-    Gauge.set(spec, n)
+    Gauge.set(:instrument_gauge, [label: "Label"], n)
   end
 
   def init(_) do
@@ -93,6 +92,25 @@ end
 
 This `GenServer` will report the current value stored in the server as the
 metric `:instrument_gauge` to Prometheus.
+
+Additionally, `Yggdrasil` subscriptions to the channel:
+
+```elixir
+%Yggdrasil.Channel{name: :extatus, adapter: Yggdrasil.Elixir}
+```
+
+can be used to get the updates on the current state of the process i.e:
+
+```elixir
+iex> chan = %Yggdrasil.Channel{name: :extatus, adapter: Yggdrasil.Elixir}
+iex> Yggdrasil.subscribe(chan)
+iex> flush()
+{:Y_CONNECTED, (...)}
+iex> {:ok, _} = Instrumented.start_link()
+{:ok, #PID<0.603.0>}
+iex> flush()
+{:Y_EVENT, _, %Extatus.Message{name: "instrumented_process", state: :up}}
+```
 
 ## Configuration
 
@@ -121,7 +139,7 @@ installed as:
 
     ```elixir
     def deps do
-      [{:extatus, "~> 0.1"}]
+      [{:extatus, "~> 0.2"}]
     end
     ```
 

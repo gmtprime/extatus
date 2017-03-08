@@ -43,6 +43,8 @@ defmodule Extatus.HandlerTest do
   alias Extatus.Sandbox.Metric
   alias Extatus.Sandbox.Counter
   alias Extatus.Sandbox.Gauge
+  alias Yggdrasil.Channel
+  alias Extatus.Message
 
   test "start / stop" do
     name = UUID.uuid4()
@@ -53,6 +55,9 @@ defmodule Extatus.HandlerTest do
   end
 
   test "metrics" do
+    channel = %Channel{name: :extatus, adapter: Yggdrasil.Elixir}
+    assert :ok = Yggdrasil.subscribe(channel)
+    assert_receive {:Y_CONNECTED, _}
     name = UUID.uuid4()
     {:ok, pid} = TestProcess.start_link(name)
     assert {:ok, handler} = Handler.start_link(TestProcess, pid)
@@ -66,6 +71,7 @@ defmodule Extatus.HandlerTest do
     assert_receive {:set, Extatus.Sandbox.Gauge, spec, 2}
     assert spec[:name] == activity_metric
     assert spec[:labels] == [name]
+    assert_receive {:Y_EVENT, _, %Message{state: :up, name: ^name}}
 
     process_metric = :test_process
     assert_receive {:declare, Extatus.Sandbox.Counter, spec, nil}
@@ -79,5 +85,6 @@ defmodule Extatus.HandlerTest do
     assert_receive {:set, Extatus.Sandbox.Gauge, spec, 0}
     assert spec[:name] == activity_metric
     assert spec[:labels] == [name]
+    assert_receive {:Y_EVENT, _, %Message{state: :down, name: ^name}}
   end
 end

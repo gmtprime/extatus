@@ -1,5 +1,8 @@
 use Mix.Config
 
+config :logger,
+  level: :info
+
 config :extatus,
   counter_mod: Extatus.Sandbox.Counter,
   gauge_mod: Extatus.Sandbox.Gauge,

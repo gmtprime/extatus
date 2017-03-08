@@ -6,8 +6,8 @@ defmodule Extatus.CowboyExporter do
 
   @prometheus_registry Application.get_env(:extatus, :prometheus_registry, :default)
 
-  @duration_metric :telemetry_scrape_duration_seconds
-  @size_metric :telemetry_scrape_size_bytes
+  @duration_metric :cowboy_scrape_duration_seconds
+  @size_metric :cowboy_scrape_size_bytes
 
   defmetrics do
     summary @duration_metric do
