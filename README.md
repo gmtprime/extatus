@@ -6,8 +6,8 @@ Extatus is an application to report the status of `GenServer` processes to
 Prometheus (time series database) via the HTTP endpoint `/metrics`
 implemented with `:cowboy`.
 
-The metrics `:telemetry_scrape_duration_seconds` (summary) and
-`telemetry_scrape_size_bytes` (summary) are calculated on every request to
+The metrics `:cowboy_scrape_duration_seconds` (summary) and
+`:cowboy_scrape_size_bytes` (summary) are calculated on every request to
 the `/metrics` endpoint.
 
 Also for every instrumented `GenServer` process, extatus reports the
