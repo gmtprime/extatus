@@ -90,10 +90,10 @@ defmodule Extatus.Process do
       use Extatus.Metric
 
       @doc false
-      def get_name(_state), do: {:error, "Not implemented"}
+      def get_name(state), do: {:ok, :erlang.phash2(state)}
 
       @doc false
-      def report(_state), do: {:error, "Not implemented"}
+      def report(_state), do: :ok
 
       defoverridable [get_name: 1, report: 1]
     end

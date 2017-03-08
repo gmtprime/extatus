@@ -6,7 +6,8 @@ defmodule Extatus.ProcessTest do
   end
 
   test "not implemented" do
-    assert {:error, _} = TestProcess.get_name(:name)
-    assert {:error, _} = TestProcess.report(:state)
+    name = :erlang.phash2(:name)
+    assert {:ok, ^name} = TestProcess.get_name(:name)
+    assert :ok = TestProcess.report(:state)
   end
 end
