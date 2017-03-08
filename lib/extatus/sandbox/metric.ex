@@ -1,4 +1,7 @@
 defmodule Extatus.Sandbox.Metric do
+  @moduledoc """
+  Sandbox server that simulates the `prometheus.ex` library.
+  """
   use GenServer
 
   defstruct [:subscribers]
