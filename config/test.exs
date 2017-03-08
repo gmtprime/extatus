@@ -5,4 +5,5 @@ config :extatus,
   gauge_mod: Extatus.Sandbox.Gauge,
   histogram_mod: Extatus.Sandbox.Histogram,
   summary_mod: Extatus.Sandbox.Summary,
-  timeout: 100
+  timeout: 100,
+  port: 4001
