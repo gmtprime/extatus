@@ -26,11 +26,10 @@ defmodule Extatus.Mixfile do
      {:prometheus_ex, "~> 1.0"},
      {:accept, "~> 0.1"},
      {:yggdrasil, "~> 3.0"},
-     {:earmark, ">= 0.0.0", only: :dev},
-     {:ex_doc, "~> 0.13", only: :dev},
+     {:ex_doc, "~> 0.14", only: :dev, runtime: false},
      {:uuid, "~> 1.1", only: [:dev, :test]},
      {:inch_ex, "~> 0.5", only: [:dev, :test]},
-     {:credo, "~> 0.6", only: [:dev, :test]}]
+     {:credo, "~> 0.7", only: [:dev, :test]}]
   end
 
   defp docs do
