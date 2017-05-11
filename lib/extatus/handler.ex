@@ -3,7 +3,7 @@ defmodule Extatus.Handler do
   This module defines a handler to monitor processes and check its status.
 
   It tracks the gauge metric `:extatus_process_activity`. Its meaning is:
-  
+
     - 0 for a process down.
     - 1 for a process idle.
     - 2 for a process up.
@@ -75,7 +75,7 @@ defmodule Extatus.Handler do
     :ok = module.setup()
     {:ok, name} = get_name(module, pid)
     ref = Process.monitor(pid)
-    state = %State{state | ref: ref, name: name} 
+    state = %State{state | ref: ref, name: name}
     {:noreply, state, 0}
   end
   def handle_info(:timeout, %State{} = state) do
@@ -125,15 +125,15 @@ defmodule Extatus.Handler do
   def get_state(pid) do
     try do
       {:ok, :sys.get_state(pid)}
-    rescue
-      _ -> :error
+    catch
+      :exit, _ -> :error
     end
   end
 
   @doc false
   def get_name(module, pid) do
     with {:ok, state} <- get_state(pid) do
-      {:ok, name} = module.get_name(state)
+      module.get_name(state)
     else
       :error -> :error
     end

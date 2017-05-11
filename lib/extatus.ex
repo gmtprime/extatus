@@ -26,17 +26,17 @@ defmodule Extatus do
     def start_link, do: GenServer.start_link(__MODULE__, nil)
 
     def stop(pid), do: GenServer.stop(pid)
-        
+
     def value(pid), do: GenServer.call(pid, :value)
-          
+
     def inc(pid), do: GenServer.call(pid, :inc)
-            
+
     def dec(pid), do: GenServer.call(pid, :dec)
 
     def init(_), do: {:ok, 0}
 
     def handle_call(:value, _from, n), do: {:reply, {:ok, n}, n}
-    def handle_call(:inc, _from, n), do: {:reply, :ok, n + 1} 
+    def handle_call(:inc, _from, n), do: {:reply, :ok, n + 1}
     def handle_call(:dec, _from, n), do: {:reply, :ok, n - 1}
     def handle_call(_, n), do: {:noreply, n}
   end
@@ -52,11 +52,11 @@ defmodule Extatus do
     def start_link, do: GenServer.start_link(__MODULE__, nil)
 
     def stop(pid), do: GenServer.stop(pid)
-    
+
     def value(pid), do: GenServer.call(pid, :value)
-    
+
     def inc(pid), do: GenServer.call(pid, :inc)
-    
+
     def dec(pid), do: GenServer.call(pid, :dec)
 
     # Metric
@@ -82,7 +82,7 @@ defmodule Extatus do
     end
 
     def handle_call(:value, _from, n), do: {:reply, {:ok, n}, n}
-    def handle_call(:inc, _from, n), do: {:reply, :ok, n + 1} 
+    def handle_call(:inc, _from, n), do: {:reply, :ok, n + 1}
     def handle_call(:dec, _from, n), do: {:reply, :ok, n - 1}
     def handle_call(_, n), do: {:noreply, n}
   end
@@ -92,7 +92,7 @@ defmodule Extatus do
   metric `:instrument_gauge` to Prometheus.
 
   Additionally, `Yggdrasil` subscriptions to the channel:
-  
+
   ```elixir
   %Yggdrasil.Channel{name: :extatus, adapter: Yggdrasil.Elixir}
   ```

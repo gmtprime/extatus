@@ -116,7 +116,7 @@ defmodule Extatus.Process do
       use Extatus.Metric
 
       @doc false
-      def get_name(state), do: {:ok, :erlang.phash2(state)}
+      def get_name(state), do: {:ok, inspect(:erlang.phash2(state))}
 
       @doc false
       def report(_state), do: :ok
