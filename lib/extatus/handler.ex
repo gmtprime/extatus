@@ -22,7 +22,7 @@ defmodule Extatus.Handler do
   updates of the process. The channel is:
 
       (...)
-      iex> chan = %Yggdrasil.Channel{name: :extatus, adapter: Yggdrasil.Elixir}
+      iex> chan = %Yggdrasil.Channel{name: :extatus}
       iex> Yggdrasil.subscribe(chan)
       iex> flush()
       {:Y_EVENT, (...), %Extatus.Message{name: (...), state: :idle}}
@@ -105,7 +105,7 @@ defmodule Extatus.Handler do
 
   @doc false
   def gen_extatus_channel do
-    %Channel{name: :extatus, adapter: Yggdrasil.Elixir}
+    %Channel{name: :extatus}
   end
 
   #########

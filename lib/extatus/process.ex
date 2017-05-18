@@ -83,13 +83,13 @@ defmodule Extatus.Process do
   Additionally, `Yggdrasil` subscriptions to the channel:
 
   ```elixir
-  %Yggdrasil.Channel{name: :extatus, adapter: Yggdrasil.Elixir}
+  %Yggdrasil.Channel{name: :extatus}
   ```
 
   can be used to get the updates on the current state of the process i.e:
 
   ```elixir
-  iex> chan = %Yggdrasil.Channel{name: :extatus, adapter: Yggdrasil.Elixir}
+  iex> chan = %Yggdrasil.Channel{name: :extatus}
   iex> Yggdrasil.subscribe(chan)
   iex> flush()
   {:Y_CONNECTED, (...)}
