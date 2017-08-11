@@ -7,8 +7,9 @@ defmodule Extatus.Server do
         port: 1337
   """
   alias Extatus.CowboyExporter
+  alias Extatus.Settings
 
-  @port Application.get_env(:extatus, :port, 4000)
+  @port Settings.extatus_port()
 
   @doc """
   Starts the cowboy server with some `options`.

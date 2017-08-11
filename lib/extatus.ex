@@ -130,6 +130,8 @@ defmodule Extatus do
   """
   use Application
 
+  alias Extatus.Settings
+
   @generator Extatus.Generator
 
   @doc """
@@ -161,10 +163,10 @@ defmodule Extatus do
 
   @doc false
   def run_sandbox do
-    Application.get_env(:extatus, :counter_mod) == Extatus.Sandbox.Counter or
-    Application.get_env(:extatus, :gauge_mod) == Extatus.Sandbox.Gauge or
-    Application.get_env(:extatus, :histogram_mod) == Extatus.Sandbox.Histogram or
-    Application.get_env(:extatus, :summary_mod) == Extatus.Sandbox.Summary
+    Settings.extatus_counter_mod() == Extatus.Sandbox.Counter or
+    Settings.extatus_gauge_mod() == Extatus.Sandbox.Gauge or
+    Settings.extatus_histogram_mod() == Extatus.Sandbox.Histogram or
+    Settings.extatus_summary_mod() == Extatus.Sandbox.Summary
   end
 
   @doc false

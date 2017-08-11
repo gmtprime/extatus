@@ -3,7 +3,9 @@ defmodule Extatus.Metric.Counter do
   This module defines a wrapper over `Prometheus.Metric.Counter` functions to
   be compatible with `Extatus` way of handling metrics.
   """
-  @metric Application.get_env(:extatus, :counter_mod, Prometheus.Metric.Counter)
+  alias Extatus.Settings
+
+  @metric Settings.extatus_counter_mod()
 
   @doc """
   Creates a counter using the `name` of a metric.

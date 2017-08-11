@@ -5,7 +5,7 @@ defmodule Extatus.Generator do
   use Supervisor
 
   @handler Extatus.Handler
-  @registry Application.get_env(:extatus, :registry, ExReg)
+  @registry Yggdrasil.Settings.registry()
 
   @doc """
   Starts a generator with some optional `Supervisor` `options`

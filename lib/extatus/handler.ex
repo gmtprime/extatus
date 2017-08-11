@@ -32,8 +32,11 @@ defmodule Extatus.Handler do
 
   alias Yggdrasil.Channel
   alias Extatus.Message
+  alias Extatus.Settings
 
-  @timeout Application.get_env(:extatus, :timeout, 1000)
+  require Logger
+
+  @timeout Settings.extatus_handler_timeout()
 
   defstruct [:pid, :ref, :name, :module, :last_state]
   alias __MODULE__, as: State
@@ -64,19 +67,25 @@ defmodule Extatus.Handler do
   # GenServer callbacks
 
   @doc false
-  def init(%State{} = state) do
+  def init(%State{pid: pid} = state) do
+    ref = Process.monitor(pid)
+    new_state = %State{state | ref: ref}
     Process.send_after(self(), :ready_up, 0)
-    {:ok, state}
+    {:ok, new_state}
   end
 
   @doc false
   def handle_info(:ready_up, %State{module: module, pid: pid} = state) do
     setup()
     :ok = module.setup()
-    {:ok, name} = get_name(module, pid)
-    ref = Process.monitor(pid)
-    state = %State{state | ref: ref, name: name}
-    {:noreply, state, 0}
+    with {:ok, name} <- get_name(module, pid) do
+      state = %State{state | name: name}
+      {:noreply, state, 0}
+    else
+      _ ->
+        Process.send_after(self(), :ready_up, @timeout)
+        {:noreply, state}
+    end
   end
   def handle_info(:timeout, %State{} = state) do
     {:ok, state} = report(state)
@@ -162,6 +171,12 @@ defmodule Extatus.Handler do
   end
 
   @doc false
+  def down(%State{pid: pid, name: nil} = state) do
+    Logger.error(fn ->
+      "Process #{inspect pid} died without a name"
+    end)
+    {:ok, state}
+  end
   def down(%State{name: name, last_state: :down} = state) do
     _ = Gauge.set(@metric, [name: name], 0)
     {:ok, state}

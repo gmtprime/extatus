@@ -3,7 +3,9 @@ defmodule Extatus.Metric.Histogram do
   This module defines a wrapper over `Prometheus.Metric.Histogram` functions to
   be compatible with `Extatus` way of handling metrics.
   """
-  @metric Application.get_env(:extatus, :histogram_mod, Prometheus.Metric.Histogram)
+  alias Extatus.Settings
+
+  @metric Settings.extatus_histogram_mod()
 
   @doc """
   Creates a histogram using the `name` of a metric.

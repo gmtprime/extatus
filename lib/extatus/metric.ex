@@ -46,13 +46,14 @@ defmodule Extatus.Metric do
       alias Extatus.Metric.Gauge
       alias Extatus.Metric.Histogram
       alias Extatus.Metric.Summary
+      alias Extatus.Settings
 
       require Extatus.Metric.Counter
       require Extatus.Metric.Gauge
       require Extatus.Metric.Histogram
       require Extatus.Metric.Summary
 
-      @prometheus_registry Application.get_env(:extatus, :prometheus_registry, :default)
+      @prometheus_registry Settings.extatus_prometheus_registry()
 
       @doc false
       def __metrics__, do: %{}

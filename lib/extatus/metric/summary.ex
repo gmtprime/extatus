@@ -3,7 +3,9 @@ defmodule Extatus.Metric.Summary do
   This module defines a wrapper over `Prometheus.Metric.Summary` functions to
   be compatible with `Extatus` way of handling metrics.
   """
-  @metric Application.get_env(:extatus, :summary_mod, Prometheus.Metric.Summary)
+  alias Extatus.Settings
+
+  @metric Settings.extatus_summary_mod()
 
   @doc """
   Creates a summary using the `name` of a metric.

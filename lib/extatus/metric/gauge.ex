@@ -3,7 +3,9 @@ defmodule Extatus.Metric.Gauge do
   This module defines a wrapper over `Prometheus.Metric.Gauge` functions to
   be compatible with `Extatus` way of handling metrics.
   """
-  @metric Application.get_env(:extatus, :gauge_mod, Prometheus.Metric.Gauge)
+  alias Extatus.Settings
+
+  @metric Settings.extatus_gauge_mod()
 
   @doc """
   Creates a gauge using the `name` of a metric.
