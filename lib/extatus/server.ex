@@ -9,20 +9,18 @@ defmodule Extatus.Server do
   alias Extatus.CowboyExporter
   alias Extatus.Settings
 
-  @port Settings.extatus_port()
-
   @doc """
   Starts the cowboy server with some `options`.
   """
   def start_link(options \\ []) do
+    port = Settings.extatus_port()
     CowboyExporter.setup()
-    tcp_opts = [port: @port]
-    config = [dispatch: build_config()]
     options =
       options
-      |> Keyword.put_new(:env, config)
+      |> Keyword.put_new(:env, %{dispatch: build_config()})
       |> Keyword.put_new(:compress, true)
-    :cowboy.start_http(:http, 100, tcp_opts, options)
+      |> Enum.into(%{})
+    :cowboy.start_clear(:http, [port: port], options)
   end
 
   #########

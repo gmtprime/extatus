@@ -1,7 +1,7 @@
 defmodule Extatus.Mixfile do
   use Mix.Project
 
-  @version "0.2.4"
+  @version "0.2.5"
 
   def project do
     [app: :extatus,
@@ -16,21 +16,19 @@ defmodule Extatus.Mixfile do
   end
 
   def application do
-    [applications: [:logger, :yggdrasil, :prometheus_ex, :cowboy],
+    [applications: [:lager, :logger, :yggdrasil, :prometheus_ex, :cowboy],
      mod: {Extatus, []}]
   end
 
   defp deps do
-    [{:exreg, "~> 0.0"},
-     {:skogsra, "~> 0.1"},
-     {:cowboy, "~> 1.1"},
-     {:prometheus_ex, "~> 1.3"},
+    [{:yggdrasil, "~> 3.3"},
+     {:skogsra, "~> 0.2"},
+     {:cowboy, "~> 2.3"},
+     {:prometheus_ex, "~> 3.0"},
      {:accept, "~> 0.3"},
-     {:yggdrasil, "~> 3.2"},
-     {:ex_doc, "~> 0.16", only: :dev, runtime: false},
+     {:ex_doc, "~> 0.18", only: :dev},
      {:uuid, "~> 1.1", only: [:dev, :test]},
-     {:inch_ex, "~> 0.5", only: [:dev, :test]},
-     {:credo, "~> 0.8", only: [:dev, :test]}]
+     {:credo, "~> 0.9", only: [:dev, :test]}]
   end
 
   defp docs do

@@ -55,7 +55,7 @@ defmodule Extatus.HandlerTest do
   end
 
   test "metrics" do
-    channel = %Channel{name: :extatus, adapter: Yggdrasil.Elixir}
+    channel = %Channel{name: :extatus}
     assert :ok = Yggdrasil.subscribe(channel)
     assert_receive {:Y_CONNECTED, _}
     name = UUID.uuid4()
