@@ -116,10 +116,21 @@ defmodule Extatus.Process do
       use Extatus.Metric
 
       @doc false
-      def get_name(state), do: {:ok, inspect(:erlang.phash2(state))}
+      def get_name(state) do
+        {:ok, inspect(:erlang.phash2(state))}
+      end
 
       @doc false
-      def report(_state), do: :ok
+      def report(_state) do
+        :ok
+      end
+
+      @doc false
+      def add_extatus_watchdog do
+        with {:ok, _} <- Extatus.set(__MODULE__, self()) do
+          :ok
+        end
+      end
 
       defoverridable [get_name: 1, report: 1]
     end

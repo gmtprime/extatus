@@ -1,105 +1,103 @@
 # Extatus
 
-[![Build Status](https://travis-ci.org/gmtprime/extatus.svg?branch=master)](https://travis-ci.org/gmtprime/extatus) [![Hex pm](http://img.shields.io/hexpm/v/extatus.svg?style=flat)](https://hex.pm/packages/extatus) [![hex.pm downloads](https://img.shields.io/hexpm/dt/extatus.svg?style=flat)](https://hex.pm/packages/extatus) [![Deps Status](https://beta.hexfaktor.org/badge/all/github/gmtprime/extatus.svg)](https://beta.hexfaktor.org/github/gmtprime/extatus) [![Inline docs](http://inch-ci.org/github/gmtprime/extatus.svg?branch=master)](http://inch-ci.org/github/gmtprime/extatus)
+[![Build Status](https://travis-ci.org/gmtprime/extatus.svg?branch=master)](https://travis-ci.org/gmtprime/extatus) [![Hex pm](http://img.shields.io/hexpm/v/extatus.svg?style=flat)](https://hex.pm/packages/extatus) [![hex.pm downloads](https://img.shields.io/hexpm/dt/extatus.svg?style=flat)](https://hex.pm/packages/extatus)
 
-Extatus is an application to report the status of `GenServer` processes to
-Prometheus (time series database) via the HTTP endpoint `/metrics`
-implemented with `:cowboy`.
+Extatus is an application that reports metrics to Prometheus via the HTTP
+endpoint `/metrics` from an instrumented `GenServer`.
 
-The metrics `:cowboy_scrape_duration_seconds` (summary) and
-`:cowboy_scrape_size_bytes` (summary) are calculated on every request to
-the `/metrics` endpoint.
+## Small Example
 
-Also for every instrumented `GenServer` process, extatus reports the
-metric `:extatus_process_activity` (gauge). This metric indicates that a
-process is up (2), down (0) or idle (1) depending on its value.
+The following is an uninstrumented `GenServer` that tracks its uptime.
 
-## Example
-
-To instrument a `GenServer` is necessary to use the `Extatus.Process`
-behaviour and implement its callbacks (`gen_name/1` and `report/1`) which
-receive the current `GenServer` state as argument. So, for the following
-module:
-
-```elixir
+```
 defmodule Uninstrumented do
   use GenServer
 
-  def start_link, do: GenServer.start_link(__MODULE__, nil)
+  def start_link do
+    GenServer.start_link(__MODULE__, nil)
+  end
 
-  def stop(pid), do: GenServer.stop(pid)
-    
-  def value(pid), do: GenServer.call(pid, :value)
-        
-  def inc(pid), do: GenServer.call(pid, :inc)
-        
-  def dec(pid), do: GenServer.call(pid, :dec)
+  def get_uptime(pid) do
+    GenServer.call(pid, :uptime)
+  end
 
-  def init(_), do: {:ok, 0}
+  def init(_) do
+    start_time = :os.system_time(:seconds)
+    {:ok, seconds}
+  end
 
-  def handle_call(:value, _from, n), do: {:reply, {:ok, n}, n}
-  def handle_call(:inc, _from, n), do: {:reply, :ok, n + 1} 
-  def handle_call(:dec, _from, n), do: {:reply, :ok, n - 1}
-  def handle_call(_, n), do: {:noreply, n}
+  def handle_call(:uptime, _from, start_time) do
+    uptime = :os.system_time(:seconds) - start_time
+    {:reply, uptime, start_time}
+  end
 end
 ```
 
-And the instrumented `GenServer` would be the following:
+If we would want to track the uptime of this process in Prometheus with
+`Extatus`, we would need:
+  1. `use Extatus.Process` behaviour.
+  2. Declare a gauge metric to track the uptime e.g. a metric called `:uptime`
+     with a label for the module name.
+  3. Implement the function `get_name/1` that receives the `GenServer` process
+     state and returns the name of the process. This name must be unique.
+  4. Implement the function `report/1` that receives the `GenServer` process
+     state. In this function, you can report the metrics.
+  5. Start the `Extatus` watchdog for your process in the `init/1` function by
+     adding the function `add_extatus_watchdog/0` (included by
+     `use Extatus.Process`).
 
-```elixir
+```
 defmodule Instrumented do
   use GenServer
-  use Extatus.Process # Extatus.Process behaviour
+  use Extatus.Process # Extatus behaviour
 
-  def start_link, do: GenServer.start_link(__MODULE__, nil)
+  def start_link do
+    GenServer.start_link(__MODULE__, nil)
+  end
 
-  def stop(pid), do: GenServer.stop(pid)
-    
-  def value(pid), do: GenServer.call(pid, :value)
-    
-  def inc(pid), do: GenServer.call(pid, :inc)
-    
-  def dec(pid), do: GenServer.call(pid, :dec)
-
-  # Metric
+  # Metric declaration
   defmetrics do
-    gauge :instrument_gauge do
-      label :label
-      registry :default
-      help "Instrument gauge"
+    gauge :uptime do
+      label :module
+      help "Uptime gauge"
     end
   end
 
   # Name of the process. This must be unique.
-  def get_name(_n), do: {:ok, "instrumented_process"}
+  def get_name(_state) do
+    {:ok, Atom.to_string(__MODULE__)}
+  end
 
-  # Report
-  def report(n) do
-    Gauge.set(:instrument_gauge, [label: "Label"], n)
+  # Report function
+  def report(start_time) do
+    uptime = :os.system_time(:seconds) - start_time
+    Gauge.set(:uptime, [module: Atom.to_string(__MODULE__)], uptime)
   end
 
   def init(_) do
-    {:ok, _} = Extatus.set(__MODULE__, self()) # Add extatus handler.
-    {:ok, 0}
+    :ok = add_extatus_watchdog() # Add extatus watchdog
+    {:ok, :os.system_time(:seconds)}
   end
-
-  def handle_call(:value, _from, n), do: {:reply, {:ok, n}, n}
-  def handle_call(:inc, _from, n), do: {:reply, :ok, n + 1} 
-  def handle_call(:dec, _from, n), do: {:reply, :ok, n - 1}
-  def handle_call(_, n), do: {:noreply, n}
 end
 ```
 
-This `GenServer` will report the current value stored in the server as the
-metric `:instrument_gauge` to Prometheus.
+The HTTP `/metric` endpoint is implemented in `:cowboy` and the output is
+provided by the library `:prometheus_ex`. If you start this process, you will
+see the metric `:uptime` being reported.
 
-Additionally, `Yggdrasil` subscriptions to the channel:
+Additionally, for every instrumented `GenServer` process, extatus reports the
+metric `:extatus_process_activity` (gauge). This metric indicates that a
+process is up (2), down (0) or idle (1) depending on its value.
+
+`Extatus` uses `Yggdrasil` to report the status of the processes in the
+following channel:
 
 ```elixir
 %Yggdrasil.Channel{name: :extatus}
 ```
 
-can be used to get the updates on the current state of the process i.e:
+This can be used to get the updates on the current state of the processes in
+a subscriber e.g:
 
 ```elixir
 iex> chan = %Yggdrasil.Channel{name: :extatus}
@@ -121,7 +119,7 @@ The following are the configuration arguments available:
   Prometheus.
   - `:prometheus_registry` - Prometheus registry. By default is `:default`.
 
-i.e:
+e.g:
 
 ```elixir
 config :extatus,
@@ -150,4 +148,3 @@ installed as:
       [applications: [:extatus]]
     end
     ```
-
