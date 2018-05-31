@@ -1,7 +1,7 @@
 defmodule Extatus.Mixfile do
   use Mix.Project
 
-  @version "0.2.5"
+  @version "0.2.6"
 
   def project do
     [app: :extatus,
@@ -16,7 +16,7 @@ defmodule Extatus.Mixfile do
   end
 
   def application do
-    [applications: [:lager, :logger, :yggdrasil, :prometheus_ex, :cowboy],
+    [applications: [:yggdrasil, :prometheus_ex, :cowboy],
      mod: {Extatus, []}]
   end
 
